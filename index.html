@@ -1,176 +1,362 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Amrita Smart Campus Navigator</title>
-<style>
-body {
-  font-family: Arial, sans-serif;
-  margin: 0;
-  background: #f0f4f8;
-  color: #17324d;
-}
-header {
-  background: #12345a;
-  color: white;
-  padding: 24px 16px;
-  text-align: center;
-}
-main {
-  max-width: 600px;
-  margin: 20px auto;
-  padding: 16px;
-}
-.card {
-  background: white;
-  padding: 20px;
-  border-radius: 14px;
-  box-shadow: 0 3px 12px #0001;
-}
-input, select, button {
-  width: 100%;
-  padding: 13px;
-  margin: 8px 0;
-  box-sizing: border-box;
-  border-radius: 8px;
-  font-size: 16px;
-}
-input, select { border: 1px solid #bbb; }
-button {
-  background: #087e8b;
-  color: white;
-  border: none;
-  font-weight: bold;
-}
-#results button {
-  background: #e8f4f6;
-  color: #12345a;
-  text-align: left;
-  border: 1px solid #d4e5e8;
-}
-.note { color: #536477; font-size: 14px; line-height: 1.5; }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Amrita Campus Navigator</title>
+
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  />
+
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f3f6fb;
+      color: #172033;
+    }
+
+    header {
+      background: #123c75;
+      color: white;
+      padding: 20px 16px;
+      text-align: center;
+    }
+
+    header h1 { margin: 0 0 7px; font-size: 23px; }
+    header p { margin: 0; font-size: 14px; }
+
+    main {
+      width: min(100% - 24px, 850px);
+      margin: 18px auto;
+    }
+
+    .panel {
+      background: white;
+      padding: 16px;
+      border-radius: 14px;
+      box-shadow: 0 2px 10px #152b4610;
+      margin-bottom: 14px;
+    }
+
+    label {
+      display: block;
+      font-weight: bold;
+      margin: 12px 0 6px;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+
+    button {
+      border: 0;
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 15px;
+      cursor: pointer;
+    }
+
+    .primary {
+      width: 100%;
+      margin-top: 14px;
+      color: white;
+      background: #1765c0;
+      font-weight: bold;
+    }
+
+    .secondary {
+      margin-top: 8px;
+      color: #123c75;
+      background: #e7effb;
+      width: 100%;
+    }
+
+    #map {
+      height: 380px;
+      width: 100%;
+      border-radius: 12px;
+      background: #e5e7eb;
+    }
+
+    #status {
+      font-size: 14px;
+      line-height: 1.5;
+      margin-top: 12px;
+      overflow-wrap: anywhere;
+    }
+
+    #steps { padding-left: 22px; line-height: 1.6; }
+    .warning { font-size: 13px; color: #7b4c00; line-height: 1.5; }
+    .small { font-size: 12px; color: #64748b; line-height: 1.5; }
+  </style>
 </head>
+
 <body>
-<header>
-  <h1>Amrita Smart Campus Navigator</h1>
-  <p>Coimbatore Campus</p>
-  <p>Where would you like to go?</p>
-</header>
-<main>
-  <section class="card">
-    <h2>Find your destination</h2>
-    <input id="search" placeholder="Search library, canteen, hostel..."
-           oninput="searchPlaces()">
-    <div id="results"></div>
-    <label for="destination">Or select a destination:</label>
-    <select id="destination">
-      <option value="">Choose a place</option>
-    </select>
-    <button onclick="showDestination()">Find destination</button>
-    <div id="message" aria-live="polite"></div>
-  </section>
-  <section class="card" style="margin-top:16px">
-    <h3>Need directions?</h3>
-    <p class="note">
-      After choosing a destination, use the campus signs and block maps
-      to confirm the route. Verified walking routes will be added in a
-      future version.
-    </p>
-  </section>
-</main>
-<script>
-const places = [
-"Academic Block - I",
-"Academic Block - II",
-"School of Business",
-"CIR Block",
-"Mechanical Labs",
-"Central Library",
-"M.Tech Block",
-"Convention Centre",
-"Ashram",
-"Civil & Aerospace Labs",
-"Academic Block - III",
-"Student Centre",
-"ATC Lab",
-"Plant Room",
-"Academic Block - IV",
-"Kapila Bhavanam (Gents Hostel)",
-"Gargi Bhavanam (Ladies Hostel)",
-"Savithri Bhavanam (Ladies Hostel)",
-"Mythreyi Bhavanam (Ladies Hostel)",
-"Vashishta Bhavanam (Gents Hostel)",
-"Agasthya Bhavanam (Gents Hostel)",
-"Gauthama Bhavanam (Gents Hostel)",
-"Sri Vyasamarishi Bhavanam (Gents Hostel)",
-"Nachiketas Bhavanam (Gents Hostel)",
-"Yagnavalkya Bhavanam (Gents Hostel)",
-"Kashyapa Bhavanam (Gents Hostel)",
-"Brighu Bhavanam (Gents Hostel)",
-"Adhithi Bhavanam (Ladies Hostel)",
-"Central Kitchen",
-"Guest House",
-"Swimming Pool",
-"Common Amenities Complex (Hospital, Stores)",
-"Project Office - I",
-"Fabrication Shop",
-"Vehicle Workshop",
-"Godowns",
-"Canteen",
-"Power House",
-"IT Canteen",
-"Project Office - 2",
-"Arogya Sadanam (Gym)",
-"Staff Quarters"
-];
+  <header>
+    <h1>Amrita Campus Navigator</h1>
+    <p>Find a campus destination and view a route</p>
+  </header>
 
-const select = document.getElementById("destination");
+  <main>
+    <section class="panel">
+      <label for="origin">Starting point</label>
+      <input
+        id="origin"
+        placeholder="e.g. Main Gate, or use my location"
+      />
 
-places.forEach(place => {
-  const option = document.createElement("option");
-  option.value = place;
-  option.textContent = place;
-  select.appendChild(option);
-});
+      <button class="secondary" id="gpsButton">
+        Use my current location
+      </button>
 
-function searchPlaces() {
-  const query = document.getElementById("search")
-    .value.toLowerCase().trim();
-  const results = document.getElementById("results");
-  results.replaceChildren();
+      <label for="destination">Where do you want to go?</label>
+      <input
+        id="destination"
+        placeholder="e.g. Central Library"
+        value=""
+      />
 
-  if (!query) return;
+      <button class="primary" id="routeButton">
+        Show route on map
+      </button>
 
-  places.filter(place =>
-    place.toLowerCase().includes(query)
-  ).slice(0, 8).forEach(place => {
-    const button = document.createElement("button");
-    button.textContent = place;
-    button.type = "button";
-    button.onclick = () => {
-      select.value = place;
-      document.getElementById("search").value = place;
-      results.replaceChildren();
-    };
-    results.appendChild(button);
-  });
-}
+      <div id="status" role="status" aria-live="polite">
+        Enter a starting point and destination to begin.
+      </div>
 
-function showDestination() {
-  const place = select.value;
-  const message = document.getElementById("message");
+      <p class="warning">
+        Prototype only: the route service below uses road-routing data,
+        not verified campus walking paths. Check campus signs and access
+        restrictions before following any route.
+      </p>
+    </section>
 
-  if (!place) {
-    message.textContent = "Please select a destination first.";
-    return;
-  }
+    <section class="panel">
+      <h2>Campus map</h2>
+      <div id="map" aria-label="Interactive campus map"></div>
+      <p class="small">
+        Map data © OpenStreetMap contributors. Search results and building
+        positions must be checked for accuracy.
+      </p>
+    </section>
 
-  message.textContent =
-    "Your destination is: " + place +
-    ". Please confirm the exact location using campus maps and signs.";
-}
-</script>
+    <section class="panel">
+      <h2>Route instructions</h2>
+      <div id="summary"></div>
+      <ol id="steps"></ol>
+    </section>
+  </main>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <script>
+    // Approximate campus-area view only, not an exact building coordinate.
+    const CAMPUS_VIEW = [10.9006, 76.9004];
+
+    const map = L.map("map").setView(CAMPUS_VIEW, 16);
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      attribution: "&copy; OpenStreetMap contributors"
+    }).addTo(map);
+
+    let startMarker = null;
+    let endMarker = null;
+    let routeLine = null;
+    let gpsPoint = null;
+
+    const statusBox = document.getElementById("status");
+    const summaryBox = document.getElementById("summary");
+    const stepsBox = document.getElementById("steps");
+
+    function setStatus(message) {
+      statusBox.textContent = message;
+    }
+
+    function clearRoute() {
+      if (startMarker) map.removeLayer(startMarker);
+      if (endMarker) map.removeLayer(endMarker);
+      if (routeLine) map.removeLayer(routeLine);
+
+      startMarker = null;
+      endMarker = null;
+      routeLine = null;
+      summaryBox.textContent = "";
+      stepsBox.replaceChildren();
+    }
+
+    async function geocode(place) {
+      const query = place +
+        ", Amrita Vishwa Vidyapeetham, Coimbatore, Tamil Nadu, India";
+
+      const url =
+        "https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q=" +
+        encodeURIComponent(query);
+
+      const response = await fetch(url);
+
+      if (!response.ok) {
+        throw new Error("The place search service is unavailable.");
+      }
+
+      const results = await response.json();
+
+      if (!results.length) {
+        throw new Error(
+          'Could not find "' + place +
+          '". Try another name or a nearby landmark.'
+        );
+      }
+
+      return {
+        lat: Number(results[0].lat),
+        lon: Number(results[0].lon),
+        name: results[0].display_name
+      };
+    }
+
+    document.getElementById("gpsButton").addEventListener("click", () => {
+      if (!navigator.geolocation) {
+        setStatus("Your browser does not support location access.");
+        return;
+      }
+
+      setStatus("Requesting your location permission...");
+
+      navigator.geolocation.getCurrentPosition(
+        position => {
+          gpsPoint = {
+            lat: position.coords.latitude,
+            lon: position.coords.longitude
+          };
+
+          document.getElementById("origin").value = "My current location";
+          map.setView([gpsPoint.lat, gpsPoint.lon], 18);
+          setStatus("Location found. Enter a destination and show the route.");
+        },
+        () => {
+          setStatus(
+            "Could not access your location. Allow location permission " +
+            "or type your starting point instead."
+          );
+        },
+        { enableHighAccuracy: true, timeout: 12000 }
+      );
+    });
+
+    document.getElementById("routeButton").addEventListener("click", async () => {
+      const originText = document.getElementById("origin").value.trim();
+      const destinationText =
+        document.getElementById("destination").value.trim();
+
+      if (!originText || !destinationText) {
+        setStatus("Enter both a starting point and a destination.");
+        return;
+      }
+
+      clearRoute();
+      setStatus("Finding locations and calculating the route...");
+
+      try {
+        let start;
+
+        if (originText.toLowerCase() === "my current location" && gpsPoint) {
+          start = gpsPoint;
+        } else {
+          start = await geocode(originText);
+        }
+
+        const end = await geocode(destinationText);
+
+        startMarker = L.marker([start.lat, start.lon])
+          .addTo(map)
+          .bindPopup("Starting point")
+          .openPopup();
+
+        endMarker = L.marker([end.lat, end.lon])
+          .addTo(map)
+          .bindPopup("Destination: " + destinationText);
+
+        // This public OSRM endpoint uses a driving profile.
+        // It does NOT calculate verified pedestrian routes.
+        const routeUrl =
+          "https://router.project-osrm.org/route/v1/driving/" +
+          start.lon + "," + start.lat + ";" +
+          end.lon + "," + end.lat +
+          "?overview=full&geometries=geojson&steps=true";
+
+        const response = await fetch(routeUrl);
+
+        if (!response.ok) {
+          throw new Error("The routing service could not calculate a route.");
+        }
+
+        const data = await response.json();
+
+        if (data.code !== "Ok" || !data.routes || !data.routes.length) {
+          throw new Error("No route was returned for these locations.");
+        }
+
+        const route = data.routes[0];
+
+        routeLine = L.geoJSON(route.geometry, {
+          style: { color: "#1765c0", weight: 6, opacity: 0.85 }
+        }).addTo(map);
+
+        map.fitBounds(routeLine.getBounds(), { padding: [25, 25] });
+
+        const distanceKm = (route.distance / 1000).toFixed(2);
+        const durationMin = Math.round(route.duration / 60);
+
+        summaryBox.textContent =
+          "Road route: " + distanceKm + " km, approximately " +
+          durationMin + " minutes by the routing service. " +
+          "This is not a walking-time estimate.";
+
+        const instructions = [];
+
+        for (const leg of route.legs) {
+          for (const step of leg.steps) {
+            const road = step.name ? " on " + step.name : "";
+            const action = step.maneuver.type || "Continue";
+            const direction = step.maneuver.modifier
+              ? " " + step.maneuver.modifier
+              : "";
+
+            const distance = step.distance >= 1000
+              ? (step.distance / 1000).toFixed(1) + " km"
+              : Math.round(step.distance) + " m";
+
+            instructions.push(
+              action + direction + road + " (" + distance + ")"
+            );
+          }
+        }
+
+        for (const instruction of instructions) {
+          const item = document.createElement("li");
+          item.textContent = instruction;
+          stepsBox.appendChild(item);
+        }
+
+        setStatus(
+          "Route displayed. Confirm that the locations and route are correct."
+        );
+      } catch (error) {
+        setStatus(error.message || "Something went wrong. Please try again.");
+      }
+    });
+  </script>
 </body>
 </html>
+
