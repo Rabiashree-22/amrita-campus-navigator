@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Amrita Smart Campus Navigator</title>
+<style>
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  background: #f0f4f8;
+  color: #17324d;
+}
+header {
+  background: #12345a;
+  color: white;
+  padding: 24px 16px;
+  text-align: center;
+}
+main {
+  max-width: 600px;
+  margin: 20px auto;
+  padding: 16px;
+}
+.card {
+  background: white;
+  padding: 20px;
+  border-radius: 14px;
+  box-shadow: 0 3px 12px #0001;
+}
+input, select, button {
+  width: 100%;
+  padding: 13px;
+  margin: 8px 0;
+  box-sizing: border-box;
+  border-radius: 8px;
+  font-size: 16px;
+}
+input, select { border: 1px solid #bbb; }
+button {
+  background: #087e8b;
+  color: white;
+  border: none;
+  font-weight: bold;
+}
+#results button {
+  background: #e8f4f6;
+  color: #12345a;
+  text-align: left;
+  border: 1px solid #d4e5e8;
+}
+.note { color: #536477; font-size: 14px; line-height: 1.5; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Amrita Smart Campus Navigator</h1>
+  <p>Coimbatore Campus</p>
+  <p>Where would you like to go?</p>
+</header>
+<main>
+  <section class="card">
+    <h2>Find your destination</h2>
+    <input id="search" placeholder="Search library, canteen, hostel..."
+           oninput="searchPlaces()">
+    <div id="results"></div>
+    <label for="destination">Or select a destination:</label>
+    <select id="destination">
+      <option value="">Choose a place</option>
+    </select>
+    <button onclick="showDestination()">Find destination</button>
+    <div id="message" aria-live="polite"></div>
+  </section>
+  <section class="card" style="margin-top:16px">
+    <h3>Need directions?</h3>
+    <p class="note">
+      After choosing a destination, use the campus signs and block maps
+      to confirm the route. Verified walking routes will be added in a
+      future version.
+    </p>
+  </section>
+</main>
+<script>
+const places = [
+"Academic Block - I",
+"Academic Block - II",
+"School of Business",
+"CIR Block",
+"Mechanical Labs",
+"Central Library",
+"M.Tech Block",
+"Convention Centre",
+"Ashram",
+"Civil & Aerospace Labs",
+"Academic Block - III",
+"Student Centre",
+"ATC Lab",
+"Plant Room",
+"Academic Block - IV",
+"Kapila Bhavanam (Gents Hostel)",
+"Gargi Bhavanam (Ladies Hostel)",
+"Savithri Bhavanam (Ladies Hostel)",
+"Mythreyi Bhavanam (Ladies Hostel)",
+"Vashishta Bhavanam (Gents Hostel)",
+"Agasthya Bhavanam (Gents Hostel)",
+"Gauthama Bhavanam (Gents Hostel)",
+"Sri Vyasamarishi Bhavanam (Gents Hostel)",
+"Nachiketas Bhavanam (Gents Hostel)",
+"Yagnavalkya Bhavanam (Gents Hostel)",
+"Kashyapa Bhavanam (Gents Hostel)",
+"Brighu Bhavanam (Gents Hostel)",
+"Adhithi Bhavanam (Ladies Hostel)",
+"Central Kitchen",
+"Guest House",
+"Swimming Pool",
+"Common Amenities Complex (Hospital, Stores)",
+"Project Office - I",
+"Fabrication Shop",
+"Vehicle Workshop",
+"Godowns",
+"Canteen",
+"Power House",
+"IT Canteen",
+"Project Office - 2",
+"Arogya Sadanam (Gym)",
+"Staff Quarters"
+];
+
+const select = document.getElementById("destination");
+
+places.forEach(place => {
+  const option = document.createElement("option");
+  option.value = place;
+  option.textContent = place;
+  select.appendChild(option);
+});
+
+function searchPlaces() {
+  const query = document.getElementById("search")
+    .value.toLowerCase().trim();
+  const results = document.getElementById("results");
+  results.replaceChildren();
+
+  if (!query) return;
+
+  places.filter(place =>
+    place.toLowerCase().includes(query)
+  ).slice(0, 8).forEach(place => {
+    const button = document.createElement("button");
+    button.textContent = place;
+    button.type = "button";
+    button.onclick = () => {
+      select.value = place;
+      document.getElementById("search").value = place;
+      results.replaceChildren();
+    };
+    results.appendChild(button);
+  });
+}
+
+function showDestination() {
+  const place = select.value;
+  const message = document.getElementById("message");
+
+  if (!place) {
+    message.textContent = "Please select a destination first.";
+    return;
+  }
+
+  message.textContent =
+    "Your destination is: " + place +
+    ". Please confirm the exact location using campus maps and signs.";
+}
+</script>
+</body>
+</html>
